@@ -1,0 +1,10 @@
+Pods
+Podfile.lock
+Package.resolved
+Build
+xcuserdata
+/.build
+/Packages
+DerivedData/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
