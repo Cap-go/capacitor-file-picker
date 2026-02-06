@@ -1,6 +1,6 @@
 {
   "name": "@capgo/capacitor-file-picker",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "description": "File picker Capacitor plugin - Pick files, images, videos, and directories",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
