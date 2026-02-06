@@ -21,6 +21,7 @@ A comprehensive file picker plugin with **full native support** for iOS and Andr
 - **Copy Files** - Copy files to new locations
 - **File Metadata** - Get size, dimensions, duration, and more
 
+
 ## Documentation
 
 The most complete doc is available here: https://capgo.app/docs/plugins/file-picker/
