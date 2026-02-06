@@ -1,6 +1,4 @@
-import { WebPlugin } from '@capacitor/core';
-
-import type { PluginListenerHandle } from '@capacitor/core';
+import { WebPlugin, type PluginListenerHandle } from '@capacitor/core';
 
 import type {
   CapgoFilePickerPlugin,
@@ -73,10 +71,12 @@ export class CapgoFilePickerWeb extends WebPlugin implements CapgoFilePickerPlug
   }
 
   async convertHeicToJpeg(_options: ConvertHeicToJpegOptions): Promise<ConvertHeicToJpegResult> {
+    void _options;
     throw this.unimplemented('convertHeicToJpeg is not supported on web');
   }
 
   async copyFile(_options: CopyFileOptions): Promise<void> {
+    void _options;
     throw this.unimplemented('copyFile is not supported on web');
   }
 
@@ -96,6 +96,8 @@ export class CapgoFilePickerWeb extends WebPlugin implements CapgoFilePickerPlug
     _eventName: 'pickerDismissed',
     _listenerFunc: PickerDismissedListener,
   ): Promise<PluginListenerHandle> {
+    void _eventName;
+    void _listenerFunc;
     return {
       remove: async () => {
         // No-op on web

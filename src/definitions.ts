@@ -344,10 +344,7 @@ export interface CapgoFilePickerPlugin {
    * @returns Promise that resolves with the listener handle
    * @since 8.0.0
    */
-  addListener(
-    eventName: 'pickerDismissed',
-    listenerFunc: PickerDismissedListener,
-  ): Promise<PluginListenerHandle>;
+  addListener(eventName: 'pickerDismissed', listenerFunc: PickerDismissedListener): Promise<PluginListenerHandle>;
 
   /**
    * Remove all listeners for this plugin.
