@@ -11,7 +11,7 @@ import UniformTypeIdentifiers
  */
 @objc(CapgoFilePickerPlugin)
 public class CapgoFilePickerPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let pluginVersion: String = "8.1.3"
+    private let pluginVersion: String = "8.1.4"
     public let identifier = "CapgoFilePickerPlugin"
     public let jsName = "CapgoFilePicker"
     public let pluginMethods: [CAPPluginMethod] = [
