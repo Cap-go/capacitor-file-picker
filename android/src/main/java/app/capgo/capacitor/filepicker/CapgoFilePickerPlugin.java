@@ -50,7 +50,7 @@ import org.json.JSONException;
 )
 public class CapgoFilePickerPlugin extends Plugin {
 
-    private final String pluginVersion = "8.1.7";
+    private final String pluginVersion = "8.1.8";
     private boolean readData = false;
 
     // MARK: - Pick Files
