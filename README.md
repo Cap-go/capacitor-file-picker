@@ -50,6 +50,22 @@ npx cap sync
 - Android: API 24+ (Android 7.0+)
 - Web: Modern browsers with File API support
 
+## Android media permissions and Google Play review
+
+This plugin is designed around user-selected picker flows such as `pickFiles()`, `pickImages()`, `pickVideos()`, `pickMedia()`, and `pickDirectory()`. For one-time or infrequent file, image, or video selection, use these picker methods and avoid adding broad media permissions to your app manifest.
+
+Google Play only allows `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO` when photo or video access is directly related to your app's core purpose and picker alternatives are not sufficient. Do not request or retain these permissions only to let a user choose files, images, or videos.
+
+Before publishing an app that declares these permissions:
+
+- Make sure broad photo or video library access is required for the app's core functionality.
+- Be ready to justify why Android Photo Picker or this plugin's picker methods are not sufficient.
+- Remove broad media permissions if the app can work with user-selected files only.
+
+If Google Play review rejects the app with a message like `Photo and Video Permissions policy: Permission use is not directly related to your app's core purpose`, remove the broad media permissions and rely on this plugin's picker APIs instead.
+
+See Google's [Photo and Video Permissions policy](https://support.google.com/googleplay/android-developer/answer/14115180) for the current review requirements.
+
 ## API
 
 <docgen-index>
@@ -214,7 +230,9 @@ Copy a file to a new location.
 checkPermissions() => Promise<PermissionStatus>
 ```
 
-Check permissions for reading files.
+Check broad storage or media permission state.
+Picker-only flows should not gate `pickFiles()`, `pickImages()`,
+`pickVideos()`, or `pickMedia()` on this permission on Android 13+.
 Android only.
 
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
@@ -230,7 +248,10 @@ Android only.
 requestPermissions() => Promise<PermissionStatus>
 ```
 
-Request permissions for reading files.
+Request broad storage or media permissions.
+Do not request or declare `READ_MEDIA_IMAGES` or `READ_MEDIA_VIDEO`
+only to use picker APIs. Google Play allows these permissions only
+when picker alternatives are not sufficient for core app functionality.
 Android only.
 
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
@@ -385,10 +406,10 @@ Options for copying a file.
 
 Permission status for file access.
 
-| Prop                      | Type                                                        | Description                                            |
-| ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------ |
-| **`readExternalStorage`** | <code><a href="#permissionstate">PermissionState</a></code> | Whether permission to read media files is granted      |
-| **`accessMediaLocation`** | <code><a href="#permissionstate">PermissionState</a></code> | Whether permission to access media location is granted |
+| Prop                      | Type                                                        | Description                                                                                                                                            |
+| ------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`readExternalStorage`** | <code><a href="#permissionstate">PermissionState</a></code> | Whether broad external storage or media permission is granted. Picker APIs that return user-selected files usually do not require this on Android 13+. |
+| **`accessMediaLocation`** | <code><a href="#permissionstate">PermissionState</a></code> | Whether permission to access media location is granted                                                                                                 |
 
 
 #### PluginListenerHandle

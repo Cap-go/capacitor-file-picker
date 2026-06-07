@@ -158,7 +158,10 @@ export interface PickDirectoryResult {
  * @since 8.0.0
  */
 export interface PermissionStatus {
-  /** Whether permission to read media files is granted */
+  /**
+   * Whether broad external storage or media permission is granted.
+   * Picker APIs that return user-selected files usually do not require this on Android 13+.
+   */
   readExternalStorage: PermissionState;
   /** Whether permission to access media location is granted */
   accessMediaLocation?: PermissionState;
@@ -306,7 +309,9 @@ export interface CapgoFilePickerPlugin {
   copyFile(options: CopyFileOptions): Promise<void>;
 
   /**
-   * Check permissions for reading files.
+   * Check broad storage or media permission state.
+   * Picker-only flows should not gate `pickFiles()`, `pickImages()`,
+   * `pickVideos()`, or `pickMedia()` on this permission on Android 13+.
    * Android only.
    *
    * @returns Promise that resolves with the permission status
@@ -320,7 +325,10 @@ export interface CapgoFilePickerPlugin {
   checkPermissions(): Promise<PermissionStatus>;
 
   /**
-   * Request permissions for reading files.
+   * Request broad storage or media permissions.
+   * Do not request or declare `READ_MEDIA_IMAGES` or `READ_MEDIA_VIDEO`
+   * only to use picker APIs. Google Play allows these permissions only
+   * when picker alternatives are not sufficient for core app functionality.
    * Android only.
    *
    * @returns Promise that resolves with the permission status
