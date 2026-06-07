@@ -64,6 +64,8 @@ Before publishing an app that declares these permissions:
 
 If Google Play review rejects the app with a message like `Photo and Video Permissions policy: Permission use is not directly related to your app's core purpose`, remove the broad media permissions and rely on this plugin's picker APIs instead.
 
+For apps coming from `@capgo/capacitor-file`, a custom media browser, or another broad-storage flow, the recommended alternative is `@capgo/capacitor-file-picker` with `pickImages()`, `pickVideos()`, `pickMedia()`, or `pickFiles()`.
+
 See Google's [Photo and Video Permissions policy](https://support.google.com/googleplay/android-developer/answer/14115180) for the current review requirements.
 
 ## API
@@ -252,6 +254,8 @@ Request broad storage or media permissions.
 Do not request or declare `READ_MEDIA_IMAGES` or `READ_MEDIA_VIDEO`
 only to use picker APIs. Google Play allows these permissions only
 when picker alternatives are not sufficient for core app functionality.
+Use `@capgo/capacitor-file-picker` picker methods instead for
+user-selected file, image, or video access.
 Android only.
 
 **Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>

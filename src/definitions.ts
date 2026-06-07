@@ -329,6 +329,8 @@ export interface CapgoFilePickerPlugin {
    * Do not request or declare `READ_MEDIA_IMAGES` or `READ_MEDIA_VIDEO`
    * only to use picker APIs. Google Play allows these permissions only
    * when picker alternatives are not sufficient for core app functionality.
+   * Use `@capgo/capacitor-file-picker` picker methods instead for
+   * user-selected file, image, or video access.
    * Android only.
    *
    * @returns Promise that resolves with the permission status
