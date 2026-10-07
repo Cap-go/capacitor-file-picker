@@ -1,12 +1,28 @@
 # @capgo/capacitor-file-picker
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-file-picker" alt="Capgo - Instant updates for Capacitor" /></a>
+
+Let users pick files, images, videos and folders with the native pickers on iOS and Android, with a web fallback. Handle HEIC photos and copy picked files where you need them.
+
+<a href="https://capgo.app/?ref=plugin_file_picker"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-file-picker" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2><a href="https://capgo.app/?ref=plugin_file_picker"> ➡️ Get Instant updates for your App with Capgo</a></h2>
-  <h2><a href="https://capgo.app/consulting/?ref=plugin_file_picker"> Missing a feature? We'll build the plugin for you 💪</a></h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_file_picker">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_file_picker">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
 
-File picker Capacitor plugin - Pick files, images, videos, and directories
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-file-picker/main/assets/github-social-preview.png" alt="@capgo/capacitor-file-picker for Capacitor apps" width="300" />
+</p>
+
+## Key features
+
+- **Files**: `pickFiles()` picks one or more files of any type.
+- **Media**: `pickImages()`, `pickVideos()` and `pickMedia()` open the photo library picker.
+- **Folders**: `pickDirectory()` returns a directory on iOS and Android.
+- **HEIC and copy**: `convertHeicToJpeg()` converts photos and `copyFile()` moves a picked file to a new location.
+- **Picker events**: a `pickerDismissed` listener plus storage permission helpers.
+- **Platforms**: iOS, Android and Web. Directory picking, HEIC conversion and file copy are native only.
 
 ## Why Capacitor File Picker?
 
