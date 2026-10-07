@@ -1,6 +1,6 @@
 # @capgo/capacitor-file-picker
 
-Let users pick files, images, videos and folders with the native pickers on iOS and Android, with a web fallback. Handle HEIC photos and copy picked files where you need them.
+Let users pick files, images, videos and folders with the native pickers on iOS and Android, with a web fallback for files and media. Convert HEIC photos on iOS and copy picked files where you need them.
 
 <a href="https://capgo.app/?ref=plugin_file_picker"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-file-picker" alt="Capgo - Instant updates for Capacitor" /></a>
 
@@ -18,9 +18,9 @@ Let users pick files, images, videos and folders with the native pickers on iOS 
 ## Key features
 
 - **Files**: `pickFiles()` picks one or more files of any type.
-- **Media**: `pickImages()`, `pickVideos()` and `pickMedia()` open the photo library picker.
+- **Media**: `pickImages()`, `pickVideos()` and `pickMedia()` open the photo library picker on iOS and Android. On web they open the browser file picker filtered by type.
 - **Folders**: `pickDirectory()` returns a directory on iOS and Android.
-- **HEIC and copy**: `convertHeicToJpeg()` converts photos and `copyFile()` moves a picked file to a new location.
+- **HEIC and copy**: `convertHeicToJpeg()` converts photos on iOS and `copyFile()` copies a picked file to a new location.
 - **Picker events**: a `pickerDismissed` listener plus storage permission helpers.
 - **Platforms**: iOS, Android and Web. Directory picking, HEIC conversion and file copy are native only.
 
