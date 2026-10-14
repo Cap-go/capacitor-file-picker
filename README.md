@@ -153,6 +153,10 @@ pickImages(options?: PickMediaOptions | undefined) => Promise<PickFilesResult>
 
 Pick one or more images from the gallery.
 Android/iOS only.
+On Android, `limit` is enforced by the system photo picker when available
+(Android 13+, or Android 11-12 with the Google Play system photo picker extension).
+Older Android versions may allow selecting more items than `limit`; results are
+truncated to `limit` before they are returned.
 
 | Param         | Type                                                          | Description                  |
 | ------------- | ------------------------------------------------------------- | ---------------------------- |
@@ -173,6 +177,10 @@ pickVideos(options?: PickMediaOptions | undefined) => Promise<PickFilesResult>
 
 Pick one or more videos from the gallery.
 Android/iOS only.
+On Android, `limit` is enforced by the system photo picker when available
+(Android 13+, or Android 11-12 with the Google Play system photo picker extension).
+Older Android versions may allow selecting more items than `limit`; results are
+truncated to `limit` before they are returned.
 
 | Param         | Type                                                          | Description                  |
 | ------------- | ------------------------------------------------------------- | ---------------------------- |
@@ -391,12 +399,12 @@ Options for picking files.
 
 Options for picking media (images/videos).
 
-| Prop                  | Type                 | Description                                                                                 | Default            |
-| --------------------- | -------------------- | ------------------------------------------------------------------------------------------- | ------------------ |
-| **`limit`**           | <code>number</code>  | Maximum number of files to pick. Set to 0 for unlimited (platform default).                 | <code>0</code>     |
-| **`readData`**        | <code>boolean</code> | Whether to read the file data as base64. Note: Reading large files may cause memory issues. | <code>false</code> |
-| **`skipTranscoding`** | <code>boolean</code> | iOS only: Skip transcoding of videos.                                                       | <code>false</code> |
-| **`ordered`**         | <code>boolean</code> | iOS 15+ only: Show ordered selection badges.                                                | <code>false</code> |
+| Prop                  | Type                 | Description                                                                                                                                                                                                                                                                                                                           | Default            |
+| --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| **`limit`**           | <code>number</code>  | Maximum number of files to pick. Set to 0 for unlimited (platform default). On Android, when the system photo picker is available, the platform enforces this limit (capped by the device maximum). On older Android versions the picker may not enforce the limit; the plugin truncates the returned list to this value when needed. | <code>0</code>     |
+| **`readData`**        | <code>boolean</code> | Whether to read the file data as base64. Note: Reading large files may cause memory issues.                                                                                                                                                                                                                                           | <code>false</code> |
+| **`skipTranscoding`** | <code>boolean</code> | iOS only: Skip transcoding of videos.                                                                                                                                                                                                                                                                                                 | <code>false</code> |
+| **`ordered`**         | <code>boolean</code> | iOS 15+ only: Show ordered selection badges.                                                                                                                                                                                                                                                                                          | <code>false</code> |
 
 
 #### PickDirectoryResult
