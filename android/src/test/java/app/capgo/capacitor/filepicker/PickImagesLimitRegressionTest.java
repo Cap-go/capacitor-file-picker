@@ -2,7 +2,6 @@ package app.capgo.capacitor.filepicker;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 
 import android.content.Intent;
 import android.provider.MediaStore;
@@ -20,16 +19,12 @@ import org.robolectric.annotation.Config;
 public class PickImagesLimitRegressionTest {
 
     @Test
-    public void fixedPickImagesUsesPhotoPickerMaxExtraNotLegacyActionPick() {
-        Intent legacy = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        legacy.setType("image/*");
-        legacy.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+    public void pickImagesIntentUsesPhotoPickerWithMaxLimit() {
+        Intent intent = MediaPickerIntents.buildPickImagesIntent(5, true);
 
-        Intent fixed = MediaPickerIntents.buildGalleryIntent("image/*", MediaStore.Images.Media.EXTERNAL_CONTENT_URI, 5, true, 100);
-
-        assertEquals(Intent.ACTION_PICK, legacy.getAction());
-        assertFalse(legacy.hasExtra(MediaStore.EXTRA_PICK_IMAGES_MAX));
-        assertNotEquals(legacy.getAction(), fixed.getAction());
-        assertEquals(5, fixed.getIntExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, -1));
+        assertEquals(MediaStore.ACTION_PICK_IMAGES, intent.getAction());
+        assertEquals("image/*", intent.getType());
+        assertEquals(5, intent.getIntExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, -1));
+        assertFalse(intent.getBooleanExtra(Intent.EXTRA_ALLOW_MULTIPLE, false));
     }
 }

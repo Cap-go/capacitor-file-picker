@@ -100,7 +100,7 @@ public class CapgoFilePickerPlugin extends Plugin {
         boolean photoPickerAvailable = MediaPickerIntents.isPhotoPickerAvailable();
         truncatePickResultsToLimit = MediaPickerIntents.shouldTruncateResultsToLimit(photoPickerAvailable);
 
-        Intent intent = MediaPickerIntents.buildPickImagesIntent(limit);
+        Intent intent = MediaPickerIntents.buildPickImagesIntent(limit, photoPickerAvailable);
         startActivityForResult(call, intent, "pickMediaResult");
     }
 
@@ -113,7 +113,7 @@ public class CapgoFilePickerPlugin extends Plugin {
         boolean photoPickerAvailable = MediaPickerIntents.isPhotoPickerAvailable();
         truncatePickResultsToLimit = MediaPickerIntents.shouldTruncateResultsToLimit(photoPickerAvailable);
 
-        Intent intent = MediaPickerIntents.buildPickVideosIntent(limit);
+        Intent intent = MediaPickerIntents.buildPickVideosIntent(limit, photoPickerAvailable);
         startActivityForResult(call, intent, "pickMediaResult");
     }
 
@@ -125,14 +125,13 @@ public class CapgoFilePickerPlugin extends Plugin {
         int limit = call.getInt("limit", 0);
 
         Intent intent;
+        boolean photoPickerAvailable = MediaPickerIntents.isPhotoPickerAvailable();
         truncatePickResultsToLimit = false;
-        if (MediaPickerIntents.isPhotoPickerAvailable()) {
+        if (photoPickerAvailable) {
             intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
             intent.setType("*/*");
             intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] { "image/*", "video/*" });
-            if (limit > 1) {
-                intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, Math.min(limit, MediaStore.getPickImagesMaxLimit()));
-            }
+            MediaPickerIntents.applyPhotoPickerMaxLimit(intent, limit, MediaStore.getPickImagesMaxLimit());
         } else {
             truncatePickResultsToLimit = true;
             intent = new Intent(Intent.ACTION_GET_CONTENT);

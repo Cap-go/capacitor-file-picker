@@ -34,12 +34,26 @@ final class MediaPickerIntents {
         return 0;
     }
 
-    static Intent buildPickImagesIntent(int limit) {
-        return buildGalleryIntent("image/*", MediaStore.Images.Media.EXTERNAL_CONTENT_URI, limit, isPhotoPickerAvailable());
+    static Intent buildPickImagesIntent(int limit, boolean photoPickerAvailable) {
+        return buildGalleryIntent("image/*", MediaStore.Images.Media.EXTERNAL_CONTENT_URI, limit, photoPickerAvailable);
     }
 
-    static Intent buildPickVideosIntent(int limit) {
-        return buildGalleryIntent("video/*", MediaStore.Video.Media.EXTERNAL_CONTENT_URI, limit, isPhotoPickerAvailable());
+    static Intent buildPickVideosIntent(int limit, boolean photoPickerAvailable) {
+        return buildGalleryIntent("video/*", MediaStore.Video.Media.EXTERNAL_CONTENT_URI, limit, photoPickerAvailable);
+    }
+
+    static int resolvePhotoPickerMaxLimit(int limit, int pickImagesMaxLimit) {
+        if (limit <= 0) {
+            return pickImagesMaxLimit > 0 ? pickImagesMaxLimit : limit;
+        }
+        return pickImagesMaxLimit > 0 ? Math.min(limit, pickImagesMaxLimit) : limit;
+    }
+
+    static void applyPhotoPickerMaxLimit(Intent intent, int limit, int pickImagesMaxLimit) {
+        if (limit == 1) {
+            return;
+        }
+        intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, resolvePhotoPickerMaxLimit(limit, pickImagesMaxLimit));
     }
 
     static Intent buildGalleryIntent(String mimeType, Uri legacyPickUri, int limit, boolean photoPickerAvailable) {
@@ -50,10 +64,7 @@ final class MediaPickerIntents {
         if (photoPickerAvailable) {
             Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
             intent.setType(mimeType);
-            if (limit > 1) {
-                int capped = pickImagesMaxLimit > 0 ? Math.min(limit, pickImagesMaxLimit) : limit;
-                intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, capped);
-            }
+            applyPhotoPickerMaxLimit(intent, limit, pickImagesMaxLimit);
             return intent;
         }
 

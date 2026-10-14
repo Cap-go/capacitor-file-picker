@@ -50,6 +50,21 @@ public class MediaPickerIntentsTest {
     }
 
     @Test
+    public void pickImagesUnlimitedUsesDeviceMaxOnPhotoPicker() {
+        Intent intent = MediaPickerIntents.buildGalleryIntent("image/*", IMAGE_URI, 0, true, 100);
+
+        assertEquals(MediaStore.ACTION_PICK_IMAGES, intent.getAction());
+        assertEquals(100, intent.getIntExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, -1));
+    }
+
+    @Test
+    public void resolvePhotoPickerMaxLimitTreatsZeroAsUnlimited() {
+        assertEquals(100, MediaPickerIntents.resolvePhotoPickerMaxLimit(0, 100));
+        assertEquals(5, MediaPickerIntents.resolvePhotoPickerMaxLimit(5, 100));
+        assertEquals(20, MediaPickerIntents.resolvePhotoPickerMaxLimit(50, 20));
+    }
+
+    @Test
     public void pickImagesSingleSelectionOmitsMaxExtra() {
         Intent intent = MediaPickerIntents.buildGalleryIntent("image/*", IMAGE_URI, 1, true, 100);
 
