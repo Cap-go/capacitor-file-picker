@@ -18,12 +18,7 @@ final class PickerLaunchQueue {
         final String callbackName;
         final boolean truncateResultsToLimit;
 
-        PendingPickerLaunch(
-            PluginCall call,
-            android.content.Intent intent,
-            String callbackName,
-            boolean truncateResultsToLimit
-        ) {
+        PendingPickerLaunch(PluginCall call, android.content.Intent intent, String callbackName, boolean truncateResultsToLimit) {
             this.call = call;
             this.intent = new IntentHolder(intent);
             this.callbackName = callbackName;

@@ -42,13 +42,10 @@ public class PickerLaunchQueueTest {
     @Test
     public void serializesLaunchesUntilComplete() {
         List<String> launched = new ArrayList<>();
-        PickerLaunchQueue queue = newQueue(
-            launch -> {
-                launched.add(launch.callbackName);
-                return true;
-            },
-            Runnable::run
-        );
+        PickerLaunchQueue queue = newQueue((launch) -> {
+            launched.add(launch.callbackName);
+            return true;
+        }, Runnable::run);
 
         queue.enqueue(launch("first", "pickMediaResult"));
         queue.enqueue(launch("second", "pickMediaResult"));
@@ -69,15 +66,12 @@ public class PickerLaunchQueueTest {
         PluginCall failedCall = mockCall("failed");
         PluginCall nextCall = mockCall("next");
 
-        PickerLaunchQueue queue = newQueue(
-            launch -> {
-                if (attempts.incrementAndGet() == 1) {
-                    throw new ActivityNotFoundException("No picker");
-                }
-                return true;
-            },
-            Runnable::run
-        );
+        PickerLaunchQueue queue = newQueue((launch) -> {
+            if (attempts.incrementAndGet() == 1) {
+                throw new ActivityNotFoundException("No picker");
+            }
+            return true;
+        }, Runnable::run);
 
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(failedCall, new Intent(), "cb", false));
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(nextCall, new Intent(), "cb", false));
@@ -92,13 +86,10 @@ public class PickerLaunchQueueTest {
         PluginCall second = mockCall("second");
         AtomicInteger attempts = new AtomicInteger();
 
-        PickerLaunchQueue queue = newQueue(
-            launch -> {
-                attempts.incrementAndGet();
-                return launch.call == second;
-            },
-            Runnable::run
-        );
+        PickerLaunchQueue queue = newQueue((launch) -> {
+            attempts.incrementAndGet();
+            return launch.call == second;
+        }, Runnable::run);
 
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(first, new Intent(), "cb", false));
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(second, new Intent(), "cb", false));
@@ -110,7 +101,7 @@ public class PickerLaunchQueueTest {
     @Test
     public void truncateFlagFollowsActiveLaunch() {
         PluginCall call = mockCall("active");
-        PickerLaunchQueue queue = newQueue(launch -> true, Runnable::run);
+        PickerLaunchQueue queue = newQueue((launch) -> true, Runnable::run);
 
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(call, new Intent(), "cb", true));
 
@@ -121,30 +112,35 @@ public class PickerLaunchQueueTest {
     @Test
     public void concurrentEnqueuesOnlyStartOneLaunch() throws Exception {
         AtomicInteger launchCount = new AtomicInteger();
-        CountDownLatch startSecond = new CountDownLatch(1);
-        ExecutorService background = Executors.newFixedThreadPool(4);
-        executors.add(background);
+        CountDownLatch firstLaunch = new CountDownLatch(1);
+        ExecutorService mainThread = Executors.newSingleThreadExecutor();
+        executors.add(mainThread);
 
-        PickerLaunchQueue queue = new PickerLaunchQueue(
-            runnable -> background.execute(runnable),
-            launch -> {
-                launchCount.incrementAndGet();
-                startSecond.countDown();
-                return true;
-            }
-        );
+        PickerLaunchQueue queue = new PickerLaunchQueue(mainThread::execute, (launch) -> {
+            launchCount.incrementAndGet();
+            firstLaunch.countDown();
+            return true;
+        });
 
-        for (int i = 0; i < 8; i++) {
+        Thread[] callers = new Thread[8];
+        for (int i = 0; i < callers.length; i++) {
             final int index = i;
-            background.execute(() -> queue.enqueue(launch("call-" + index, "pickFilesResult")));
+            callers[i] = new Thread(() -> queue.enqueue(launch("call-" + index, "pickFilesResult")));
+            callers[i].start();
+        }
+        for (Thread caller : callers) {
+            caller.join();
         }
 
-        assertTrue(startSecond.await(5, TimeUnit.SECONDS));
-        Thread.sleep(200);
+        assertTrue(firstLaunch.await(5, TimeUnit.SECONDS));
+        mainThread.submit(() -> {}).get(5, TimeUnit.SECONDS);
         assertEquals(1, launchCount.get());
     }
 
-    private static PickerLaunchQueue newQueue(PickerLaunchQueue.ActivityLauncher launcher, PickerLaunchQueue.MainThreadScheduler scheduler) {
+    private static PickerLaunchQueue newQueue(
+        PickerLaunchQueue.ActivityLauncher launcher,
+        PickerLaunchQueue.MainThreadScheduler scheduler
+    ) {
         return new PickerLaunchQueue(scheduler, launcher);
     }
 
