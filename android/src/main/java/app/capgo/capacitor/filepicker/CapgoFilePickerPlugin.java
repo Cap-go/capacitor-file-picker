@@ -32,10 +32,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import org.json.JSONException;
 
 @CapacitorPlugin(
@@ -54,23 +52,20 @@ public class CapgoFilePickerPlugin extends Plugin {
 
     private final String pluginVersion = "8.2.6";
 
-    private static final class PendingPickerLaunch {
+    private PickerLaunchQueue pickerLaunchQueue;
 
-        final PluginCall call;
-        final Intent intent;
-        final String callbackName;
-        final boolean truncateResultsToLimit;
-
-        PendingPickerLaunch(PluginCall call, Intent intent, String callbackName, boolean truncateResultsToLimit) {
-            this.call = call;
-            this.intent = intent;
-            this.callbackName = callbackName;
-            this.truncateResultsToLimit = truncateResultsToLimit;
-        }
+    @Override
+    public void load() {
+        super.load();
+        pickerLaunchQueue = new PickerLaunchQueue(
+            runnable -> bridge.executeOnMainThread(runnable),
+            launch -> {
+                String callbackId = launch.call.getCallbackId();
+                startActivityForResult(launch.call, launch.getIntent(), launch.callbackName);
+                return bridge.getSavedCall(callbackId) != null;
+            }
+        );
     }
-
-    private final Queue<PendingPickerLaunch> pendingPickerLaunches = new ArrayDeque<>();
-    private PendingPickerLaunch activePickerLaunch;
 
     // MARK: - Pick Files
 
@@ -276,10 +271,7 @@ public class CapgoFilePickerPlugin extends Plugin {
     }
 
     private boolean truncateResultsForCall(PluginCall call) {
-        if (activePickerLaunch != null && activePickerLaunch.call == call) {
-            return activePickerLaunch.truncateResultsToLimit;
-        }
-        return false;
+        return pickerLaunchQueue.isTruncateResultsForCall(call);
     }
 
     private void handleFilePickerResult(PluginCall call, ActivityResult result, boolean truncateResultsToLimit) {
@@ -370,25 +362,17 @@ public class CapgoFilePickerPlugin extends Plugin {
     }
 
     private void enqueuePickerLaunch(PluginCall call, Intent intent, String callbackName, boolean truncateResultsToLimit) {
-        PendingPickerLaunch launch = new PendingPickerLaunch(call, intent, callbackName, truncateResultsToLimit);
-        if (activePickerLaunch != null) {
-            pendingPickerLaunches.add(launch);
-            return;
-        }
-        startPickerLaunch(launch);
-    }
-
-    private void startPickerLaunch(PendingPickerLaunch launch) {
-        activePickerLaunch = launch;
-        startActivityForResult(launch.call, launch.intent, launch.callbackName);
+        PickerLaunchQueue.PendingPickerLaunch launch = new PickerLaunchQueue.PendingPickerLaunch(
+            call,
+            intent,
+            callbackName,
+            truncateResultsToLimit
+        );
+        pickerLaunchQueue.enqueue(launch);
     }
 
     private void completeActivePickerLaunch() {
-        activePickerLaunch = null;
-        PendingPickerLaunch next = pendingPickerLaunches.poll();
-        if (next != null) {
-            startPickerLaunch(next);
-        }
+        pickerLaunchQueue.completeActive();
     }
 
     // MARK: - Helpers
