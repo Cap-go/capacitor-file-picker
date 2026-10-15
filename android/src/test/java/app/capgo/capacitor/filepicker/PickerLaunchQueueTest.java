@@ -42,10 +42,13 @@ public class PickerLaunchQueueTest {
     @Test
     public void serializesLaunchesUntilComplete() {
         List<String> launched = new ArrayList<>();
-        PickerLaunchQueue queue = newQueue((launch) -> {
-            launched.add(launch.callbackName);
-            return true;
-        }, Runnable::run);
+        PickerLaunchQueue queue = newQueue(
+            (launch) -> {
+                launched.add(launch.callbackName);
+                return true;
+            },
+            Runnable::run
+        );
 
         queue.enqueue(launch("first", "pickMediaResult"));
         queue.enqueue(launch("second", "pickMediaResult"));
@@ -66,12 +69,15 @@ public class PickerLaunchQueueTest {
         PluginCall failedCall = mockCall("failed");
         PluginCall nextCall = mockCall("next");
 
-        PickerLaunchQueue queue = newQueue((launch) -> {
-            if (attempts.incrementAndGet() == 1) {
-                throw new ActivityNotFoundException("No picker");
-            }
-            return true;
-        }, Runnable::run);
+        PickerLaunchQueue queue = newQueue(
+            (launch) -> {
+                if (attempts.incrementAndGet() == 1) {
+                    throw new ActivityNotFoundException("No picker");
+                }
+                return true;
+            },
+            Runnable::run
+        );
 
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(failedCall, new Intent(), "cb", false));
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(nextCall, new Intent(), "cb", false));
@@ -86,10 +92,13 @@ public class PickerLaunchQueueTest {
         PluginCall second = mockCall("second");
         AtomicInteger attempts = new AtomicInteger();
 
-        PickerLaunchQueue queue = newQueue((launch) -> {
-            attempts.incrementAndGet();
-            return launch.call == second;
-        }, Runnable::run);
+        PickerLaunchQueue queue = newQueue(
+            (launch) -> {
+                attempts.incrementAndGet();
+                return launch.call == second;
+            },
+            Runnable::run
+        );
 
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(first, new Intent(), "cb", false));
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(second, new Intent(), "cb", false));
