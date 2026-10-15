@@ -2,8 +2,10 @@ package app.capgo.capacitor.filepicker;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
@@ -59,12 +61,23 @@ public class CapgoFilePickerPlugin extends Plugin {
         super.load();
         pickerLaunchQueue = new PickerLaunchQueue(
             runnable -> bridge.executeOnMainThread(runnable),
-            launch -> {
-                String callbackId = launch.call.getCallbackId();
-                startActivityForResult(launch.call, launch.getIntent(), launch.callbackName);
-                return bridge.getSavedCall(callbackId) != null;
-            }
+            this::launchPickerActivity
         );
+    }
+
+    private boolean launchPickerActivity(PickerLaunchQueue.PendingPickerLaunch launch) {
+        Intent intent = launch.getIntent();
+        if (getActivity().getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+            launch.call.reject("Unable to open file picker");
+            return false;
+        }
+        try {
+            startActivityForResult(launch.call, launch.getIntent(), launch.callbackName);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            launch.call.reject("Unable to open file picker", e);
+            return false;
+        }
     }
 
     // MARK: - Pick Files
