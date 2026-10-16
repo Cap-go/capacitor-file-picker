@@ -2,6 +2,7 @@ package app.capgo.capacitor.filepicker;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
 import android.database.Cursor;
@@ -51,13 +52,29 @@ import org.json.JSONException;
 public class CapgoFilePickerPlugin extends Plugin {
 
     private final String pluginVersion = "8.2.6";
-    private boolean readData = false;
+
+    private PickerLaunchQueue pickerLaunchQueue;
+
+    @Override
+    public void load() {
+        super.load();
+        pickerLaunchQueue = new PickerLaunchQueue((runnable) -> bridge.executeOnMainThread(runnable), this::launchPickerActivity);
+    }
+
+    private boolean launchPickerActivity(PickerLaunchQueue.PendingPickerLaunch launch) {
+        try {
+            startActivityForResult(launch.call, launch.getIntent(), launch.callbackName);
+            return true;
+        } catch (ActivityNotFoundException e) {
+            launch.call.reject("Unable to open file picker", e);
+            return false;
+        }
+    }
 
     // MARK: - Pick Files
 
     @PluginMethod
     public void pickFiles(PluginCall call) {
-        readData = call.getBoolean("readData", false);
         int limit = call.getInt("limit", 0);
 
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -86,53 +103,49 @@ public class CapgoFilePickerPlugin extends Plugin {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, limit != 1);
 
-        startActivityForResult(call, intent, "pickFilesResult");
+        enqueuePickerLaunch(call, intent, "pickFilesResult", false);
     }
 
     // MARK: - Pick Images
 
     @PluginMethod
     public void pickImages(PluginCall call) {
-        readData = call.getBoolean("readData", false);
         int limit = call.getInt("limit", 0);
+        boolean photoPickerAvailable = MediaPickerIntents.isPhotoPickerAvailable();
+        boolean truncateResults = MediaPickerIntents.shouldTruncateResultsToLimit(photoPickerAvailable);
 
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        intent.setType("image/*");
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, limit != 1);
-
-        startActivityForResult(call, intent, "pickMediaResult");
+        Intent intent = MediaPickerIntents.buildPickImagesIntent(limit, photoPickerAvailable);
+        enqueuePickerLaunch(call, intent, "pickMediaResult", truncateResults);
     }
 
     // MARK: - Pick Videos
 
     @PluginMethod
     public void pickVideos(PluginCall call) {
-        readData = call.getBoolean("readData", false);
         int limit = call.getInt("limit", 0);
+        boolean photoPickerAvailable = MediaPickerIntents.isPhotoPickerAvailable();
+        boolean truncateResults = MediaPickerIntents.shouldTruncateResultsToLimit(photoPickerAvailable);
 
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-        intent.setType("video/*");
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, limit != 1);
-
-        startActivityForResult(call, intent, "pickMediaResult");
+        Intent intent = MediaPickerIntents.buildPickVideosIntent(limit, photoPickerAvailable);
+        enqueuePickerLaunch(call, intent, "pickMediaResult", truncateResults);
     }
 
     // MARK: - Pick Media
 
     @PluginMethod
     public void pickMedia(PluginCall call) {
-        readData = call.getBoolean("readData", false);
         int limit = call.getInt("limit", 0);
 
         Intent intent;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        boolean photoPickerAvailable = MediaPickerIntents.isPhotoPickerAvailable();
+        boolean truncateResults = false;
+        if (photoPickerAvailable) {
             intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
             intent.setType("*/*");
             intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] { "image/*", "video/*" });
-            if (limit > 1) {
-                intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, limit);
-            }
+            MediaPickerIntents.applyPhotoPickerMaxLimit(intent, limit, MediaStore.getPickImagesMaxLimit());
         } else {
+            truncateResults = true;
             intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("*/*");
             intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] { "image/*", "video/*" });
@@ -140,7 +153,7 @@ public class CapgoFilePickerPlugin extends Plugin {
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, limit != 1);
         }
 
-        startActivityForResult(call, intent, "pickMediaResult");
+        enqueuePickerLaunch(call, intent, "pickMediaResult", truncateResults);
     }
 
     // MARK: - Pick Directory
@@ -150,7 +163,7 @@ public class CapgoFilePickerPlugin extends Plugin {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
-        startActivityForResult(call, intent, "pickDirectoryResult");
+        enqueuePickerLaunch(call, intent, "pickDirectoryResult", false);
     }
 
     // MARK: - Convert HEIC to JPEG
@@ -253,89 +266,123 @@ public class CapgoFilePickerPlugin extends Plugin {
 
     @ActivityCallback
     private void pickFilesResult(PluginCall call, ActivityResult result) {
-        handleFilePickerResult(call, result);
+        handleFilePickerResult(call, result, false);
     }
 
     @ActivityCallback
     private void pickMediaResult(PluginCall call, ActivityResult result) {
-        handleFilePickerResult(call, result);
+        handleFilePickerResult(call, result, truncateResultsForCall(call));
     }
 
-    private void handleFilePickerResult(PluginCall call, ActivityResult result) {
+    private boolean truncateResultsForCall(PluginCall call) {
+        return pickerLaunchQueue.isTruncateResultsForCall(call);
+    }
+
+    private void handleFilePickerResult(PluginCall call, ActivityResult result, boolean truncateResultsToLimit) {
         if (call == null) {
+            completeActivePickerLaunch();
             return;
         }
 
-        if (result.getResultCode() != Activity.RESULT_OK) {
-            notifyListeners("pickerDismissed", new JSObject());
-            JSObject ret = new JSObject();
-            ret.put("files", new JSArray());
-            call.resolve(ret);
-            return;
-        }
-
-        Intent data = result.getData();
-        if (data == null) {
-            JSObject ret = new JSObject();
-            ret.put("files", new JSArray());
-            call.resolve(ret);
-            return;
-        }
-
-        List<Uri> uris = new ArrayList<>();
-
-        ClipData clipData = data.getClipData();
-        if (clipData != null) {
-            for (int i = 0; i < clipData.getItemCount(); i++) {
-                uris.add(clipData.getItemAt(i).getUri());
+        try {
+            if (result.getResultCode() != Activity.RESULT_OK) {
+                notifyListeners("pickerDismissed", new JSObject());
+                JSObject ret = new JSObject();
+                ret.put("files", new JSArray());
+                call.resolve(ret);
+                return;
             }
-        } else if (data.getData() != null) {
-            uris.add(data.getData());
-        }
 
-        JSArray files = new JSArray();
-        for (Uri uri : uris) {
-            JSObject fileInfo = getFileInfo(uri);
-            if (fileInfo != null) {
-                files.put(fileInfo);
+            Intent data = result.getData();
+            if (data == null) {
+                JSObject ret = new JSObject();
+                ret.put("files", new JSArray());
+                call.resolve(ret);
+                return;
             }
-        }
 
-        JSObject ret = new JSObject();
-        ret.put("files", files);
-        call.resolve(ret);
+            List<Uri> uris = new ArrayList<>();
+
+            ClipData clipData = data.getClipData();
+            if (clipData != null) {
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    uris.add(clipData.getItemAt(i).getUri());
+                }
+            } else if (data.getData() != null) {
+                uris.add(data.getData());
+            }
+
+            if (truncateResultsToLimit) {
+                int limit = call.getInt("limit", 0);
+                uris = MediaPickerIntents.truncateUris(uris, limit);
+            }
+
+            boolean readData = call.getBoolean("readData", false);
+            JSArray files = new JSArray();
+            for (Uri uri : uris) {
+                JSObject fileInfo = getFileInfo(uri, readData);
+                if (fileInfo != null) {
+                    files.put(fileInfo);
+                }
+            }
+
+            JSObject ret = new JSObject();
+            ret.put("files", files);
+            call.resolve(ret);
+        } finally {
+            completeActivePickerLaunch();
+        }
     }
 
     @ActivityCallback
     private void pickDirectoryResult(PluginCall call, ActivityResult result) {
         if (call == null) {
+            completeActivePickerLaunch();
             return;
         }
 
-        if (result.getResultCode() != Activity.RESULT_OK) {
-            notifyListeners("pickerDismissed", new JSObject());
-            call.reject("User cancelled");
-            return;
+        try {
+            if (result.getResultCode() != Activity.RESULT_OK) {
+                notifyListeners("pickerDismissed", new JSObject());
+                call.reject("User cancelled");
+                return;
+            }
+
+            Intent data = result.getData();
+            if (data == null || data.getData() == null) {
+                call.reject("No directory selected");
+                return;
+            }
+
+            Uri uri = data.getData();
+            String path = getPathFromUri(uri);
+
+            JSObject ret = new JSObject();
+            ret.put("path", path != null ? path : uri.toString());
+            call.resolve(ret);
+        } finally {
+            completeActivePickerLaunch();
         }
+    }
 
-        Intent data = result.getData();
-        if (data == null || data.getData() == null) {
-            call.reject("No directory selected");
-            return;
-        }
+    private void enqueuePickerLaunch(PluginCall call, Intent intent, String callbackName, boolean truncateResultsToLimit) {
+        PickerLaunchQueue.PendingPickerLaunch launch = new PickerLaunchQueue.PendingPickerLaunch(
+            call,
+            intent,
+            callbackName,
+            truncateResultsToLimit
+        );
+        pickerLaunchQueue.enqueue(launch);
+    }
 
-        Uri uri = data.getData();
-        String path = getPathFromUri(uri);
-
-        JSObject ret = new JSObject();
-        ret.put("path", path != null ? path : uri.toString());
-        call.resolve(ret);
+    private void completeActivePickerLaunch() {
+        pickerLaunchQueue.completeActive();
     }
 
     // MARK: - Helpers
 
     @Nullable
-    private JSObject getFileInfo(Uri uri) {
+    private JSObject getFileInfo(Uri uri, boolean readData) {
         try {
             JSObject result = new JSObject();
 
@@ -415,7 +462,6 @@ public class CapgoFilePickerPlugin extends Plugin {
                 }
             }
 
-            // Read data if requested
             if (readData) {
                 try (InputStream is = getContext().getContentResolver().openInputStream(uri)) {
                     if (is != null) {
