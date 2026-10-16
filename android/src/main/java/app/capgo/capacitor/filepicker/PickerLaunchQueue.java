@@ -1,6 +1,5 @@
 package app.capgo.capacitor.filepicker;
 
-import android.content.ActivityNotFoundException;
 import com.getcapacitor.PluginCall;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -111,7 +110,7 @@ final class PickerLaunchQueue {
         boolean launched;
         try {
             launched = activityLauncher.launch(launch);
-        } catch (ActivityNotFoundException e) {
+        } catch (RuntimeException e) {
             launch.call.reject("Unable to open file picker", e);
             startNextQueuedLaunch();
             return;
