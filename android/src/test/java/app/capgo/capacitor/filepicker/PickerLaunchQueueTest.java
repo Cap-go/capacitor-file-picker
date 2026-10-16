@@ -88,13 +88,13 @@ public class PickerLaunchQueueTest {
 
     @Test
     public void runtimeExceptionFromLauncherRejectsAndStartsNextQueued() {
-        AtomicInteger attempts = new AtomicInteger();
+        PluginCall activeCall = mockCall("active");
         PluginCall failedCall = mockCall("failed");
         PluginCall nextCall = mockCall("next");
 
         PickerLaunchQueue queue = newQueue(
             (launch) -> {
-                if (attempts.incrementAndGet() == 1) {
+                if (launch.call == failedCall) {
                     throw new SecurityException("Permission denied");
                 }
                 return true;
@@ -102,8 +102,13 @@ public class PickerLaunchQueueTest {
             Runnable::run
         );
 
+        queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(activeCall, new Intent(), "cb", false));
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(failedCall, new Intent(), "cb", false));
         queue.enqueue(new PickerLaunchQueue.PendingPickerLaunch(nextCall, new Intent(), "cb", false));
+
+        assertEquals(activeCall, queue.getActiveLaunch().call);
+
+        queue.completeActive();
 
         verify(failedCall).reject(eq("Unable to open file picker"), any(SecurityException.class));
         assertEquals(nextCall, queue.getActiveLaunch().call);
