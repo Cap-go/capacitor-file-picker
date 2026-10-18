@@ -35,6 +35,9 @@ export interface PickMediaOptions {
   /**
    * Maximum number of files to pick.
    * Set to 0 for unlimited (platform default).
+   * On Android, when the system photo picker is available, the platform enforces this
+   * limit (capped by the device maximum). On older Android versions the picker may not
+   * enforce the limit; the plugin truncates the returned list to this value when needed.
    * @default 0
    */
   limit?: number;
@@ -208,6 +211,10 @@ export interface CapgoFilePickerPlugin {
   /**
    * Pick one or more images from the gallery.
    * Android/iOS only.
+   * On Android, `limit` is enforced by the system photo picker when available
+   * (Android 13+, or Android 11-12 with the Google Play system photo picker extension).
+   * Older Android versions may allow selecting more items than `limit`; results are
+   * truncated to `limit` before they are returned.
    *
    * @param options - Options for picking images
    * @returns Promise that resolves with the picked images
@@ -226,6 +233,10 @@ export interface CapgoFilePickerPlugin {
   /**
    * Pick one or more videos from the gallery.
    * Android/iOS only.
+   * On Android, `limit` is enforced by the system photo picker when available
+   * (Android 13+, or Android 11-12 with the Google Play system photo picker extension).
+   * Older Android versions may allow selecting more items than `limit`; results are
+   * truncated to `limit` before they are returned.
    *
    * @param options - Options for picking videos
    * @returns Promise that resolves with the picked videos
