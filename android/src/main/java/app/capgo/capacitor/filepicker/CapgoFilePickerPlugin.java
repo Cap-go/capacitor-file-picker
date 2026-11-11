@@ -51,7 +51,7 @@ import org.json.JSONException;
 )
 public class CapgoFilePickerPlugin extends Plugin {
 
-    private final String pluginVersion = "8.2.7";
+    private final String pluginVersion = "8.2.8";
 
     private PickerLaunchQueue pickerLaunchQueue;
 
